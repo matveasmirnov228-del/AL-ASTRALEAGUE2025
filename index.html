@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraLeague - Премия игрового сообщества 2025</title>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #8B0000;
+            --secondary-color: #4A4A4A;
+            --dark-color: #1A1A1A;
+            --light-color: #E0E0E0;
+            --accent-color: #C0C0C0;
+            --success-color: #4CAF50;
+            --danger-color: #ff4d4d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background-color: var(--dark-color);
+            color: var(--light-color);
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 0, 0, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(74, 74, 74, 0.1) 0%, transparent 20%);
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .logo span {
+            color: var(--accent-color);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 2rem;
+        }
+        
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        nav ul li a:hover {
+            color: var(--accent-color);
+        }
+        
+        .admin-btn {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        
+        .admin-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .hero {
+            height: 100vh;
+            background: linear-gradient(rgba(26, 26, 26, 0.8), rgba(26, 26, 26, 0.9)), 
+                        url('https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 1rem;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-color), var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .categories {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 2.5rem;
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+        
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .category-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .category-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .category-img {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+        }
+        
+        .category-content {
+            padding: 1.5rem;
+        }
+        
+        .category-content h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .nominees {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.1), rgba(74, 74, 74, 0.1));
+        }
+        
+        .nominees-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .nomination-category {
+            margin-bottom: 3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nomination-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-color);
+            text-align: center;
+        }
+        
+        .nominees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nominee-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            text-align: center;
+            transition: transform 0.3s;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nominee-card:hover {
+            transform: scale(1.05);
+        }
+        
+        .nominee-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .nominee-info {
+            padding: 1.5rem;
+        }
+        
+        .nominee-info h3 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .vote-btn {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        
+        .vote-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .vote-btn.voted {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+        
+        .vote-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .about {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .about-content {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+        }
+        
+        .about-text {
+            flex: 1;
+        }
+        
+        .about-text h2 {
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+        }
+        
+        .about-text p {
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .about-image {
+            flex: 1;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .about-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .admin-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--dark-color);
+            padding: 2rem;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--primary-color);
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .admin-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        
+        .close-admin {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close-admin:hover {
+            color: var(--primary-color);
+        }
+        
+        .admin-form {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 2px solid var(--secondary-color);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        
+        .results-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .results-table th, .results-table td {
+            padding: 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .results-table th {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .results-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .vote-progress-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .vote-progress {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            flex: 1;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .vote-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), #ff6b6b);
+            border-radius: 6px;
+            transition: width 0.8s ease;
+            box-shadow: 0 2px 8px rgba(139, 0, 0, 0.5);
+        }
+        
+        .vote-percentage {
+            font-weight: 600;
+            color: var(--accent-color);
+            min-width: 60px;
+            text-align: right;
+        }
+        
+        .total-votes {
+            text-align: center;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid var(--primary-color);
+        }
+        
+        .total-votes h4 {
+            color: var(--accent-color);
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .total-votes .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .admin-actions .btn {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .connection-status.connected {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        footer {
+            background: linear-gradient(135deg, var(--secondary-color), var(--dark-color));
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-logo {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-links a {
+            color: white;
+            margin: 0 1rem;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent-color);
+        }
+        
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        
+        .social-icon:hover {
+            background: var(--primary-color);
+        }
+        
+        .copyright {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            nav {
+                width: 100%;
+                margin-top: 1rem;
+                display: none;
+            }
+            
+            nav.active {
+                display: block;
+            }
+            
+            nav ul {
+                flex-direction: column;
+            }
+            
+            nav ul li {
+                margin: 0.5rem 0;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+                position: absolute;
+                top: 1rem;
+                right: 2rem;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .about-content {
+                flex-direction: column;
+            }
+            
+            .nominees-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .admin-content {
+                width: 98%;
+                padding: 1rem;
+            }
+            
+            .results-table {
+                font-size: 0.9rem;
+            }
+            
+            .results-table th, .results-table td {
+                padding: 0.8rem 0.5rem;
+            }
+            
+            .admin-actions .btn {
+                min-width: 100%;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="connection-status disconnected" id="connectionStatus">
+        <i class="fas fa-wifi"></i> Подключение...
+    </div>
+
+    <header>
+        <div class="header-container">
+            <a href="#" class="logo">Astra<span>League</span></a>
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <nav>
+                <ul>
+                    <li><a href="#home">Главная</a></li>
+                    <li><a href="#categories">Категории</a></li>
+                    <li><a href="#nominees">Номинанты</a></li>
+                    <li><a href="#about">О премии</a></li>
+                    <li><a href="#" class="admin-btn" id="adminBtn">Панель управления</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>AstraLeague Awards 2025</h1>
+            <p>Присоединяйтесь к нам в праздновании лучших в игровом сообществе! Голосуйте за своих фаворитов и станьте частью самого яркого события года в мире гейминга!</p>
+            <a href="#nominees" class="btn">Голосовать сейчас</a>
+        </div>
+    </section>
+
+    <section class="categories" id="categories">
+        <h2 class="section-title">Категории</h2>
+        <div class="categories-grid">
+            <div class="category-card">
+                <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Игровые номинации" class="category-img">
+                <div class="category-content">
+                    <h3>Игровые номинации</h3>
+                    <p>Лучшие игроки по ролям и достижениям в играх</p>
+                </div>
+            </div>
+            <div class="category-card">
+                <img src="https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Личностные номинации" class="category-img">
+                <div class="category-content">
+                    <h3>Личностные номинации</h3>
+                    <p>Самые яркие личности сообщества</p>
+                </div>
+            </div>
+            <div class="category-card">
+                <img src="https://images.unsplash.com/photo-1535016120720-40c646be5580?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Кино и развлечения" class="category-img">
+                <div class="category-content">
+                    <h3>Кино и развлечения</h3>
+                    <p>Лучшие фильмы и игровые платформы</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="nominees" id="nominees">
+        <div class="nominees-container">
+            <h2 class="section-title">Номинанты</h2>
+            
+            <div class="nomination-category">
+                <h3 class="nomination-title">Игровые номинации</h3>
+                <div class="nominees-grid">
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Лучший игрок</h3>
+                            <button class="vote-btn" data-category="best_player">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Лучший Адк</h3>
+                            <button class="vote-btn" data-category="best_adc">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Лучший Сап</h3>
+                            <button class="vote-btn" data-category="best_sup">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Лучший Топер</h3>
+                            <button class="vote-btn" data-category="best_top">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Лучший Лесник</h3>
+                            <button class="vote-btn" data-category="best_jungle">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Лучший Мидер</h3>
+                            <button class="vote-btn" data-category="best_mid">Голосовать</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nomination-category">
+                <h3 class="nomination-title">Личностные номинации</h3>
+                <div class="nominees-grid">
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Хранитель лоу таба</h3>
+                            <button class="vote-btn" data-category="low_tab_keeper">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Зануда года</h3>
+                            <button class="vote-btn" data-category="bore_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Женщина года</h3>
+                            <button class="vote-btn" data-category="woman_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Мужчина года</h3>
+                            <button class="vote-btn" data-category="man_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Прорыв года</h3>
+                            <button class="vote-btn" data-category="breakthrough_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Стиль года</h3>
+                            <button class="vote-btn" data-category="style_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Дуо года</h3>
+                            <button class="vote-btn" data-category="duo_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Пати года</h3>
+                            <button class="vote-btn" data-category="party_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Соня года</h3>
+                            <button class="vote-btn" data-category="sleeper_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nomination-category">
+                <h3 class="nomination-title">Кино и развлечения</h3>
+                <div class="nominees-grid">
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Лучшее кино</h3>
+                            <button class="vote-btn" data-category="best_movie">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Роблокс года</h3>
+                            <button class="vote-btn" data-category="roblox_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                    <div class="nominee-card">
+                        <div class="nominee-info">
+                            <h3>Самый ненужный бот года</h3>
+                            <button class="vote-btn" data-category="useless_bot_of_year">Голосовать</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about" id="about">
+        <h2 class="section-title">О премии</h2>
+        <div class="about-content">
+            <div class="about-text">
+                <h2>AstraLeague Awards 2025 - праздник игрового сообщества</h2>
+                <p>AstraLeague Awards - это ежегодная премия, которая отмечает выдающихся игроков, яркие личности и значимые события в игровом сообществе. Мы собираем вместе самых талантливых и активных участников нашего сообщества, чтобы отпраздновать их достижения.</p>
+                <p>Наша миссия - вдохновлять, признавать и продвигать лучших из лучших, создавая платформу для выражения благодарности и уважения к тем, кто делает наше сообщество особенным.</p>
+                <a href="#nominees" class="btn">Принять участие</a>
+            </div>
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="О премии">
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">Astra<span>League</span> 2025</div>
+            <div class="footer-links">
+                <a href="#home">Главная</a>
+                <a href="#categories">Категории</a>
+                <a href="#nominees">Номинанты</a>
+                <a href="#about">О премии</a>
+                <a href="#">Контакты</a>
+            </div>
+            <div class="social-icons">
+                <a href="#" class="social-icon"><i class="fab fa-discord"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-twitch"></i></a>
+            </div>
+            <p class="copyright">© 2025 AstraLeague Awards. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2 class="admin-title">Панель управления голосованием</h2>
+                <button class="close-admin" id="closeAdmin">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="loginForm" class="admin-form">
+                <div class="form-group">
+                    <label for="adminPassword">Пароль администратора:</label>
+                    <input type="password" id="adminPassword" placeholder="Введите пароль для доступа к результатам">
+                </div>
+                <button class="btn" id="loginBtn">Войти в панель управления</button>
+            </div>
+            
+            <div id="resultsPanel" style="display: none;">
+                <div class="form-group">
+                    <label for="categorySelect">Выберите номинацию для просмотра результатов:</label>
+                    <select id="categorySelect" class="form-group input">
+                        <option value="all">Все номинации (общий обзор)</option>
+                        <option value="best_player">Лучший игрок</option>
+                        <option value="best_adc">Лучший Адк</option>
+                        <option value="best_sup">Лучший Сап</option>
+                        <option value="best_top">Лучший Топер</option>
+                        <option value="best_jungle">Лучший Лесник</option>
+                        <option value="best_mid">Лучший Мидер</option>
+                        <option value="low_tab_keeper">Хранитель лоу таба</option>
+                        <option value="bore_of_year">Зануда года</option>
+                        <option value="woman_of_year">Женщина года</option>
+                        <option value="man_of_year">Мужчина года</option>
+                        <option value="breakthrough_of_year">Прорыв года</option>
+                        <option value="style_of_year">Стиль года</option>
+                        <option value="duo_of_year">Дуо года</option>
+                        <option value="party_of_year">Пати года</option>
+                        <option value="sleeper_of_year">Соня года</option>
+                        <option value="best_movie">Лучшее кино</option>
+                        <option value="roblox_of_year">Роблокс года</option>
+                        <option value="useless_bot_of_year">Самый ненужный бот года</option>
+                    </select>
+                </div>
+                
+                <div class="results-container">
+                    <div class="total-votes">
+                        <h4>Общее количество голосов в выбранной категории:</h4>
+                        <div class="number" id="totalVotes">0</div>
+                    </div>
+                    
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Место</th>
+                                <th>Номинант</th>
+                                <th>Голоса</th>
+                                <th>Процент</th>
+                                <th>Прогресс</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="admin-actions">
+                    <button class="btn" id="resetVotes">Сбросить все голоса</button>
+                    <button class="btn" id="exportData">Экспорт данных</button>
+                    <button class="btn" id="refreshResults">Обновить результаты</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-panel" id="nomineeModal">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2 class="admin-title" id="modalTitle">Выберите номинанта</h2>
+                <button class="close-admin" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="nomineeList">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🔥 ЗАМЕНИТЕ ЭТУ КОНФИГУРАЦИЮ НА СВОЮ ИЗ FIREBASE!
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXOrtI5VatCfK08c_z0OsK-dFfxZM7XU8",
+            authDomain: "astraleague-cf77f.firebaseapp.com",
+            databaseURL: "https://astraleague-cf77f-default-rtdb.firebaseio.com",
+            projectId: "astraleague-cf77f",
+            storageBucket: "astraleague-cf77f.firebasestorage.app",
+            messagingSenderId: "42450050638",
+            appId: "1:42450050638:web:60fd0e85e2e27d95222d1f"
+        };
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const nomineesList = [
+            "МАТВАН", "КРИММИ", "ВИКА", "ТЁМА", "ВАНДЕР", 
+            "ДАНЯ", "МАЙОР", "КОЛЯ", "СЕРЫЙ", "ХАШИК"
+        ];
+
+        const categories = {
+            best_player: "Лучший игрок",
+            best_adc: "Лучший Адк",
+            best_sup: "Лучший Сап",
+            best_top: "Лучший Топер",
+            best_jungle: "Лучший Лесник",
+            best_mid: "Лучший Мидер",
+            low_tab_keeper: "Хранитель лоу таба",
+            bore_of_year: "Зануда года",
+            woman_of_year: "Женщина года",
+            man_of_year: "Мужчина года",
+            breakthrough_of_year: "Прорыв года",
+            style_of_year: "Стиль года",
+            duo_of_year: "Дуо года",
+            party_of_year: "Пати года",
+            sleeper_of_year: "Соня года",
+            best_movie: "Лучшее кино",
+            roblox_of_year: "Роблокс года",
+            useless_bot_of_year: "Самый ненужный бот года"
+        };
+
+        const movieOptions = [
+            "Человек паук 1",
+            "Человек паук 2", 
+            "Человек паук 3",
+            "Лига справедливости",
+            "Бэтмен",
+            "Супермен"
+        ];
+
+        const uselessBotOptions = [
+            "Minerea♪",
+            "Лисёнок", 
+            "Тёма"
+        ];
+
+        const duoOfYearOptions = [
+            "Вика Кримми",
+            "Вика Матван",
+            "Матван Кримми",
+            "Матван Даня",
+            "Даня Тёма",
+            "Даня Кримми",
+            "Вандер Тёма"
+        ];
+
+        const partyOfYearOptions = [
+            "Матван Вика Даня Кримми Хашик",
+            "Матван Вика Даня Кримми Тёма",
+            "Матван Тёма Даня Кримми Хашик",
+            "Матван Вика Даня Кримми Вандер",
+            "Матван Тёма Даня Кримми Вандер"
+        ];
+
+        let votesData = {};
+        let isOnline = false;
+
+        // Проверка подключения
+        function checkConnection() {
+            const connectionRef = firebase.database().ref('.info/connected');
+            connectionRef.on('value', (snapshot) => {
+                isOnline = snapshot.val();
+                const statusElement = document.getElementById('connectionStatus');
+                if (isOnline) {
+                    statusElement.className = 'connection-status connected';
+                    statusElement.innerHTML = '<i class="fas fa-wifi"></i> Онлайн';
+                } else {
+                    statusElement.className = 'connection-status disconnected';
+                    statusElement.innerHTML = '<i class="fas fa-wifi-slash"></i> Оффлайн';
+                }
+            });
+        }
+
+        // Загрузка голосов из Firebase
+        async function loadVotes() {
+            try {
+                const snapshot = await database.ref('votes').once('value');
+                if (snapshot.exists()) {
+                    votesData = snapshot.val();
+                } else {
+                    initializeVotesData();
+                    await saveVotes();
+                }
+                updateVoteButtons();
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                // Fallback на localStorage
+                const localVotes = localStorage.getItem('astraLeague2025Votes');
+                if (localVotes) {
+                    votesData = JSON.parse(localVotes);
+                } else {
+                    initializeVotesData();
+                }
+            }
+        }
+
+        function initializeVotesData() {
+            Object.keys(categories).forEach(category => {
+                votesData[category] = {};
+                if (category === 'best_movie') {
+                    movieOptions.forEach(movie => {
+                        votesData[category][movie] = 0;
+                    });
+                } else if (category === 'useless_bot_of_year') {
+                    uselessBotOptions.forEach(bot => {
+                        votesData[category][bot] = 0;
+                    });
+                } else if (category === 'duo_of_year') {
+                    duoOfYearOptions.forEach(duo => {
+                        votesData[category][duo] = 0;
+                    });
+                } else if (category === 'party_of_year') {
+                    partyOfYearOptions.forEach(party => {
+                        votesData[category][party] = 0;
+                    });
+                } else {
+                    nomineesList.forEach(nominee => {
+                        votesData[category][nominee] = 0;
+                    });
+                }
+            });
+        }
+
+        // Сохранение голосов в Firebase
+        async function saveVotes() {
+            try {
+                await database.ref('votes').set(votesData);
+                // Также сохраняем локально как backup
+                localStorage.setItem('astraLeague2025Votes', JSON.stringify(votesData));
+                return true;
+            } catch (error) {
+                console.error('Ошибка сохранения:', error);
+                // Fallback на localStorage
+                localStorage.setItem('astraLeague2025Votes', JSON.stringify(votesData));
+                return false;
+            }
+        }
+
+        // Синхронизация в реальном времени
+        function setupRealtimeSync() {
+            database.ref('votes').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    votesData = snapshot.val();
+                    updateVoteButtons();
+                    
+                    // Если админская панель открыта - обновить результаты
+                    if (document.getElementById('resultsPanel').style.display !== 'none') {
+                        updateResultsTable();
+                    }
+                }
+            });
+        }
+
+        function updateVoteButtons() {
+            const votedCategories = JSON.parse(localStorage.getItem('astraLeague2025Voted') || '{}');
+            
+            document.querySelectorAll('.vote-btn').forEach(button => {
+                const category = button.getAttribute('data-category');
+                if (votedCategories[category]) {
+                    button.textContent = '✓ Голос отправлен';
+                    button.classList.add('voted');
+                    button.disabled = true;
+                } else {
+                    button.textContent = 'Голосовать';
+                    button.classList.remove('voted');
+                    button.disabled = false;
+                }
+            });
+        }
+
+        // Голосование
+        async function voteForNominee(category, nominee) {
+            const voteBtn = document.querySelector(`.vote-btn[data-category="${category}"]`);
+            const originalText = voteBtn.innerHTML;
+            
+            voteBtn.innerHTML = '<div class="loading"></div>';
+            voteBtn.disabled = true;
+
+            try {
+                if (!votesData[category]) votesData[category] = {};
+                if (!votesData[category][nominee]) votesData[category][nominee] = 0;
+                
+                votesData[category][nominee]++;
+                
+                const success = await saveVotes();
+                
+                if (success) {
+                    const votedCategories = JSON.parse(localStorage.getItem('astraLeague2025Voted') || '{}');
+                    votedCategories[category] = true;
+                    localStorage.setItem('astraLeague2025Voted', JSON.stringify(votedCategories));
+                    
+                    updateVoteButtons();
+                    showNotification(`✅ Ваш голос за "${nominee}" в номинации "${categories[category]}" сохранен!`);
+                } else {
+                    showNotification('⚠️ Голос сохранен локально. Проверьте подключение к интернету.');
+                }
+            } catch (error) {
+                console.error('Ошибка голосования:', error);
+                showNotification('❌ Ошибка при сохранении голоса');
+                voteBtn.innerHTML = originalText;
+                voteBtn.disabled = false;
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.right = '20px';
+            notification.style.backgroundColor = 'var(--success-color)';
+            notification.style.color = 'white';
+            notification.style.padding = '1rem 1.5rem';
+            notification.style.borderRadius = '8px';
+            notification.style.zIndex = '10000';
+            notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+            notification.style.transition = 'transform 0.3s, opacity 0.3s';
+            notification.style.transform = 'translateY(20px)';
+            notification.style.opacity = '0';
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateY(0)';
+                notification.style.opacity = '1';
+            }, 10);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateY(20px)';
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        const adminPanel = document.getElementById('adminPanel');
+        const adminBtn = document.getElementById('adminBtn');
+        const closeAdmin = document.getElementById('closeAdmin');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginForm = document.getElementById('loginForm');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resetVotesBtn = document.getElementById('resetVotes');
+        const exportDataBtn = document.getElementById('exportData');
+        const refreshResultsBtn = document.getElementById('refreshResults');
+        const categorySelect = document.getElementById('categorySelect');
+        const nomineeModal = document.getElementById('nomineeModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const nomineeList = document.getElementById('nomineeList');
+        const totalVotesElement = document.getElementById('totalVotes');
+
+        const ADMIN_PASSWORD = 'admin2025';
+
+        adminBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            adminPanel.style.display = 'block';
+        });
+
+        closeAdmin.addEventListener('click', () => {
+            adminPanel.style.display = 'none';
+            loginForm.style.display = 'block';
+            resultsPanel.style.display = 'none';
+            document.getElementById('adminPassword').value = '';
+        });
+
+        closeModal.addEventListener('click', () => {
+            nomineeModal.style.display = 'none';
+        });
+
+        loginBtn.addEventListener('click', () => {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                loginForm.style.display = 'none';
+                resultsPanel.style.display = 'block';
+                updateResultsTable();
+            } else {
+                alert('❌ Неверный пароль! Попробуйте снова.');
+            }
+        });
+
+        function updateResultsTable() {
+            const resultsBody = document.getElementById('resultsBody');
+            resultsBody.innerHTML = '';
+            
+            const selectedCategory = categorySelect.value;
+            let totalVotes = 0;
+
+            if (selectedCategory === 'all') {
+                Object.keys(categories).forEach(category => {
+                    totalVotes += displayCategoryResults(category, resultsBody);
+                });
+            } else {
+                totalVotes = displayCategoryResults(selectedCategory, resultsBody);
+            }
+
+            totalVotesElement.textContent = totalVotes;
+        }
+
+        function displayCategoryResults(category, resultsBody) {
+            const categoryVotes = votesData[category];
+            const totalVotes = Object.values(categoryVotes).reduce((sum, votes) => sum + votes, 0);
+            
+            const categoryRow = document.createElement('tr');
+            categoryRow.innerHTML = `<td colspan="5" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; font-weight: bold; font-size: 1.2rem;">${categories[category]}</td>`;
+            resultsBody.appendChild(categoryRow);
+            
+            const sortedNominees = Object.entries(categoryVotes)
+                .sort((a, b) => b[1] - a[1])
+                .filter(([_, votes]) => votes > 0);
+            
+            if (sortedNominees.length === 0) {
+                const noVotesRow = document.createElement('tr');
+                noVotesRow.innerHTML = `<td colspan="5" style="text-align: center; color: #aaa; padding: 2rem;">Пока нет голосов в этой номинации</td>`;
+                resultsBody.appendChild(noVotesRow);
+            } else {
+                sortedNominees.forEach(([nominee, votes], index) => {
+                    const percentage = totalVotes > 0 ? (votes / totalVotes) * 100 : 0;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-weight: bold; color: ${getPlaceColor(index + 1)}">${index + 1}</td>
+                        <td style="font-weight: 600;">${nominee}</td>
+                        <td style="font-weight: bold; color: var(--accent-color)">${votes}</td>
+                        <td style="font-weight: 600;">${percentage.toFixed(1)}%</td>
+                        <td>
+                            <div class="vote-progress-container">
+                                <div class="vote-progress">
+                                    <div class="vote-progress-bar" style="width: ${percentage}%"></div>
+                                </div>
+                                <div class="vote-percentage">${percentage.toFixed(1)}%</div>
+                            </div>
+                        </td>
+                    `;
+                    resultsBody.appendChild(row);
+                });
+            }
+            
+            return totalVotes;
+        }
+
+        function getPlaceColor(place) {
+            switch(place) {
+                case 1: return '#FFD700';
+                case 2: return '#C0C0C0';
+                case 3: return '#CD7F32';
+                default: return 'var(--light-color)';
+            }
+        }
+
+        resetVotesBtn.addEventListener('click', () => {
+            if (confirm('⚠️ ВНИМАНИЕ! Вы уверены, что хотите сбросить ВСЕ голосы? Это действие нельзя отменить и все данные будут потеряны!')) {
+                initializeVotesData();
+                saveVotes();
+                localStorage.removeItem('astraLeague2025Voted');
+                updateResultsTable();
+                updateVoteButtons();
+                showNotification('🗑️ Все голосы успешно сброшены!');
+            }
+        });
+
+        exportDataBtn.addEventListener('click', () => {
+            const dataStr = JSON.stringify(votesData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'astra_league_votes_' + new Date().toISOString().split('T')[0] + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('📊 Данные успешно экспортированы!');
+        });
+
+        refreshResultsBtn.addEventListener('click', () => {
+            updateResultsTable();
+            showNotification('🔄 Результаты обновлены!');
+        });
+
+        categorySelect.addEventListener('change', updateResultsTable);
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', async () => {
+            checkConnection();
+            setupRealtimeSync();
+            await loadVotes();
+            
+            document.querySelectorAll('.vote-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const category = button.getAttribute('data-category');
+                    
+                    const votedCategories = JSON.parse(localStorage.getItem('astraLeague2025Voted') || '{}');
+                    if (votedCategories[category]) {
+                        showNotification('❌ Вы уже голосовали в этой номинации!');
+                        return;
+                    }
+                    
+                    modalTitle.textContent = `Выберите номинанта: ${categories[category]}`;
+                    nomineeList.innerHTML = '';
+                    
+                    let options = [];
+                    if (category === 'best_movie') {
+                        options = movieOptions;
+                    } else if (category === 'useless_bot_of_year') {
+                        options = uselessBotOptions;
+                    } else if (category === 'duo_of_year') {
+                        options = duoOfYearOptions;
+                    } else if (category === 'party_of_year') {
+                        options = partyOfYearOptions;
+                    } else {
+                        options = nomineesList;
+                    }
+                    
+                    options.forEach(option => {
+                        const nomineeButton = document.createElement('button');
+                        nomineeButton.className = 'vote-btn';
+                        nomineeButton.textContent = option;
+                        nomineeButton.style.margin = '0.5rem';
+                        nomineeButton.style.width = 'calc(100% - 1rem)';
+                        nomineeButton.style.fontSize = '1.1rem';
+                        nomineeButton.style.padding = '1rem';
+                        nomineeButton.addEventListener('click', () => {
+                            voteForNominee(category, option);
+                            nomineeModal.style.display = 'none';
+                        });
+                        nomineeList.appendChild(nomineeButton);
+                    });
+                    
+                    nomineeModal.style.display = 'block';
+                });
+            });
+            
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const nav = document.querySelector('nav');
+            
+            mobileMenuBtn.addEventListener('click', () => {
+                nav.classList.toggle('active');
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if(targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    if(targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                        
+                        nav.classList.remove('active');
+                    }
+                });
+            });
+            
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+            
+            document.querySelectorAll('.category-card, .nominee-card, .about-content').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html> 
